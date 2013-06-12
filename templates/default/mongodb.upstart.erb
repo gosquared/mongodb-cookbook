@@ -11,4 +11,4 @@ stop on runlevel [!2345]
 respawn
 respawn limit 10 5
 
-exec sudo -u mongodb <%= @bin %> -f /etc/mongodb.conf <% if @replset -%>--replSet <%= @replset %><% end %>
+exec sudo -u mongodb <%= @bin %> -f <%= @configpath %> <%= @flags %>

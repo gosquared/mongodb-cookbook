@@ -5,45 +5,74 @@ directory "/etc/mongodb" do
   recursive true
 end
 
-node[:mongodb][:instances].each do |instance|
+mongodb_defaults = {
+  :mongod => {
+    :version => '2.2.3',
+    :bind_ip => '127.0.0.1',
+    :port => 27017,
+    :pidfile => "/var/lib/mongodb/mongod.lock",
+    :timeout => 300,
+    :dbpath => "/var/lib/mongodb",
+    :logpath => "/var/log/mongodb",
+    :bin => "/usr/bin/mongod"
+  },
+  :mongos => {
+    :bind_ip => '127.0.0.1',
+    :port => 27017,
+    :timeout => 300,
+    :logpath => "/var/log/mongodb",
+    :bin => "/usr/bin/mongos"
+  }
+}
 
-  template "/etc/init/mongodb_#{instance[:port]}.conf" do
+node[:mongodb][:instances].each do | instance |
+  attributes = mongodb_defaults[instance[:type].to_sym].clone
+
+  instance.each do |key, val|
+    attributes[key.to_sym] = val
+  end
+
+  template "/etc/init/mongodb-#{instance[:port]}.conf" do
     source "mongodb.upstart.erb"
     owner "root"
     group "root"
     mode "0644"
     backup false
-    variables instance
-    # notifies :restart, resources(:service => "mongodb_#{instance[:port]}"), :delayed
+    variables attributes
+    # notifies :restart, resources(:service => "mongodb-#{attributes[:port]}"), :delayed
   end
 
-  service "mongodb_#{instance[:port]}" do
+  service "mongodb-#{attributes[:port]}" do
     provider Chef::Provider::Service::Upstart
     supports :start => true, :stop => true, :restart => true
     action [:enable, :start]
   end
 
-  directory instance[:dbpath] do
+  directory attributes[:dbpath] do
+    owner "mongodb"
+    group "mongodb"
+    mode "0775"
+    recursive true
+    only_if { attributes.key?(:dbpath) }
+  end
+
+  directory attributes[:logpath] do
     owner "mongodb"
     group "mongodb"
     mode "0775"
     recursive true
   end
 
-  directory instance[:logpath] do
-    owner "mongodb"
-    group "mongodb"
-    mode "0775"
-    recursive true
-  end
+  attributes[:configpath] = "/etc/mongodb/mongodb-#{attributes[:port]}.conf"
+  attributes[:logpath] = "#{attributes[:logpath]}/mongodb-#{attributes[:port]}.log"
 
-  template "/etc/mongodb/mongodb_#{instance[:port]}.conf" do
+  template attributes[:configpath] do
     source "mongodb.conf.erb"
     owner "root"
     group "root"
     mode "0644"
     backup false
-    variables instance
-    notifies :restart, resources(:service => "mongodb_#{instance[:port]}"), :delayed
+    variables attributes
+    # notifies :restart, resources(:service => "mongodb-#{attributes[:port]}"), :delayed
   end
 end

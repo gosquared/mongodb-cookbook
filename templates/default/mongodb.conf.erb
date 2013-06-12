@@ -4,6 +4,8 @@
 bind_ip = <%= @bind_ip %>
 port = <%= @port %>
 
+<% if @dbpath -%>
 dbpath = <%= @dbpath %>
+<% end %>
 
-logpath = <%= @logpath %>/mongodb.log
+logpath = <%= @logpath %>
