@@ -1,7 +1,23 @@
-node[:instances].each do |instance|
-  instance = node[:mongodb][:mongod].merge(instance)
+directory "/etc/mongodb" do
+  owner "mongodb"
+  group "mongodb"
+  mode "0775"
+  recursive true
+end
 
-  service "mongodb-#{instance[:port]}" do
+node[:mongodb][:instances].each do |instance|
+
+  template "/etc/init/mongodb_#{instance[:port]}.conf" do
+    source "mongodb.upstart.erb"
+    owner "root"
+    group "root"
+    mode "0644"
+    backup false
+    variables instance
+    # notifies :restart, resources(:service => "mongodb_#{instance[:port]}"), :delayed
+  end
+
+  service "mongodb_#{instance[:port]}" do
     provider Chef::Provider::Service::Upstart
     supports :start => true, :stop => true, :restart => true
     action [:enable, :start]
@@ -21,22 +37,13 @@ node[:instances].each do |instance|
     recursive true
   end
 
-  template "/etc/init/mongodb-#{instance[:port]}.conf" do
-    source "mongodb.upstart.erb"
+  template "/etc/mongodb/mongodb_#{instance[:port]}.conf" do
+    source "mongodb.conf.erb"
     owner "root"
     group "root"
     mode "0644"
     backup false
     variables instance
-    notifies :restart, resources(:service => "mongodb-#{instance[:port]}"), :delayed
-  end
-
-  template "/etc/mongodb/mongodb.conf" do
-    owner "root"
-    group "root"
-    mode "0644"
-    backup false
-    variables instance
-    notifies :restart, resources(:service => "mongodb-#{instance[:port]}"), :delayed
+    notifies :restart, resources(:service => "mongodb_#{instance[:port]}"), :delayed
   end
 end
