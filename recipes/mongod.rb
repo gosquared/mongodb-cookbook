@@ -28,17 +28,24 @@ mongodb_defaults = {
 node[:mongodb][:instances].each do | instance |
   attributes = mongodb_defaults[instance[:type].to_sym].clone
 
+  attributes[:configpath] = "/etc/mongodb/mongodb-#{attributes[:port]}.conf"
+  attributes[:logpath] = "#{attributes[:logpath]}/mongodb-#{attributes[:port]}.log"
+  attributes[:upstartpath] = "/etc/init/mongodb-#{instance[:port]}.conf"
+
   instance.each do |key, val|
     attributes[key.to_sym] = val
   end
 
-  template "/etc/init/mongodb-#{instance[:port]}.conf" do
+  template attributes[:upstartpath] do
     source "mongodb.upstart.erb"
     owner "root"
     group "root"
     mode "0644"
     backup false
     variables attributes
+    not_if do
+      File.exists?(attributes[:upstartpath])
+    end
     # notifies :restart, resources(:service => "mongodb-#{attributes[:port]}"), :delayed
   end
 
@@ -63,9 +70,6 @@ node[:mongodb][:instances].each do | instance |
     recursive true
   end
 
-  attributes[:configpath] = "/etc/mongodb/mongodb-#{attributes[:port]}.conf"
-  attributes[:logpath] = "#{attributes[:logpath]}/mongodb-#{attributes[:port]}.log"
-
   template attributes[:configpath] do
     source "mongodb.conf.erb"
     owner "root"
@@ -73,6 +77,9 @@ node[:mongodb][:instances].each do | instance |
     mode "0644"
     backup false
     variables attributes
+    not_if do
+      File.exists?(attributes[:configpath])
+    end
     # notifies :restart, resources(:service => "mongodb-#{attributes[:port]}"), :delayed
   end
 end
