@@ -28,13 +28,13 @@ mongodb_defaults = {
 node[:mongodb][:instances].each do | instance |
   attributes = mongodb_defaults[instance[:type].to_sym].clone
 
-  attributes[:configpath] = "/etc/mongodb/mongodb-#{attributes[:port]}.conf"
-  attributes[:logpath] = "#{attributes[:logpath]}/mongodb-#{attributes[:port]}.log"
-  attributes[:upstartpath] = "/etc/init/mongodb-#{instance[:port]}.conf"
-
   instance.each do |key, val|
     attributes[key.to_sym] = val
   end
+
+  attributes[:configpath] = "/etc/mongodb/mongodb-#{attributes[:port]}.conf"
+  attributes[:logpath] = "#{attributes[:logpath]}/mongodb-#{attributes[:port]}.log"
+  attributes[:upstartpath] = "/etc/init/mongodb-#{instance[:port]}.conf"
 
   template attributes[:upstartpath] do
     source "mongodb.upstart.erb"
