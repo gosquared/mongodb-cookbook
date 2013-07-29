@@ -32,6 +32,7 @@ node[:mongodb][:instances].each do | instance |
     attributes[key.to_sym] = val
   end
 
+  log_dir = attributes[:logpath];
   attributes[:configpath] = "/etc/mongodb/mongodb-#{attributes[:port]}.conf"
   attributes[:logpath] = "#{attributes[:logpath]}/mongodb-#{attributes[:port]}.log"
   attributes[:upstartpath] = "/etc/init/mongodb-#{instance[:port]}.conf"
@@ -63,7 +64,7 @@ node[:mongodb][:instances].each do | instance |
     only_if { attributes.key?(:dbpath) }
   end
 
-  directory attributes[:logpath] do
+  directory log_dir do
     owner "mongodb"
     group "mongodb"
     mode "0775"
