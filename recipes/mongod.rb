@@ -44,9 +44,6 @@ node[:mongodb][:instances].each do | instance |
     mode "0644"
     backup false
     variables attributes
-    not_if do
-      File.exists?(attributes[:upstartpath])
-    end
     # notifies :restart, resources(:service => "mongodb-#{attributes[:port]}"), :delayed
   end
 
@@ -78,9 +75,6 @@ node[:mongodb][:instances].each do | instance |
     mode "0644"
     backup false
     variables attributes
-    not_if do
-      File.exists?(attributes[:configpath])
-    end
     # notifies :restart, resources(:service => "mongodb-#{attributes[:port]}"), :delayed
   end
 end
